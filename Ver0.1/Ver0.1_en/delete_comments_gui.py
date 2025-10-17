@@ -15,7 +15,7 @@ class CommentRemoverApp:
         self.root.resizable(False, False)
 
         self.folder_path_var = tk.StringVar()
-        self.status_var = tk.StringVar(value="请选择一个文件夹")
+        self.status_var = tk.StringVar(value="Please select a folder")
         self.progress_var = tk.DoubleVar(value=0.0)
 
         self.total_files = 0
@@ -31,25 +31,25 @@ class CommentRemoverApp:
     def _build_ui(self) -> None:
         padding = {"padx": 12, "pady": 8}
 
-        path_frame = ttk.LabelFrame(self.root, text="目标文件夹")
+        path_frame = ttk.LabelFrame(self.root, text="Target Folder")
         path_frame.pack(fill="x", **padding)
 
         path_entry = ttk.Entry(path_frame, textvariable=self.folder_path_var, state="readonly")
         path_entry.pack(side="left", fill="x", expand=True, padx=(12, 6), pady=8)
 
-        browse_btn = ttk.Button(path_frame, text="选择...", command=self.select_folder)
+        browse_btn = ttk.Button(path_frame, text="Browse...", command=self.select_folder)
         browse_btn.pack(side="left", padx=(0, 12), pady=8)
 
         actions_frame = ttk.Frame(self.root)
         actions_frame.pack(fill="x", **padding)
 
-        self.start_btn = ttk.Button(actions_frame, text="开始处理", command=self.start_processing)
+        self.start_btn = ttk.Button(actions_frame, text="Start", command=self.start_processing)
         self.start_btn.pack(side="left", padx=(12, 6))
 
-        self.cancel_btn = ttk.Button(actions_frame, text="取消", state="disabled", command=self.cancel_processing)
+        self.cancel_btn = ttk.Button(actions_frame, text="Cancel", state="disabled", command=self.cancel_processing)
         self.cancel_btn.pack(side="left", padx=(6, 12))
 
-        progress_frame = ttk.LabelFrame(self.root, text="处理进度")
+        progress_frame = ttk.LabelFrame(self.root, text="Progress")
         progress_frame.pack(fill="x", **padding)
 
         self.progress_bar = ttk.Progressbar(progress_frame, variable=self.progress_var, maximum=100)
@@ -58,7 +58,7 @@ class CommentRemoverApp:
         self.progress_label = ttk.Label(progress_frame, textvariable=self.status_var, anchor="w")
         self.progress_label.pack(fill="x", padx=12, pady=(0, 12))
 
-        self.current_file_var = tk.StringVar(value="当前文件：无")
+        self.current_file_var = tk.StringVar(value="Current file: None")
         self.current_file_label = ttk.Label(self.root, textvariable=self.current_file_var, anchor="w")
         self.current_file_label.pack(fill="x", padx=24)
 
@@ -68,28 +68,28 @@ class CommentRemoverApp:
         selected = filedialog.askdirectory()
         if selected:
             self.folder_path_var.set(selected)
-            self.status_var.set("已选择文件夹，点击开始处理")
+            self.status_var.set("Folder selected, click Start to begin")
             self.progress_var.set(0.0)
-            self.current_file_var.set("当前文件：无")
+            self.current_file_var.set("Current file: None")
 
     def start_processing(self) -> None:
         if self.worker_thread and self.worker_thread.is_alive():
-            messagebox.showwarning("操作进行中", "仍在处理中，请稍候或取消。")
+            messagebox.showwarning("Operation in progress", "Processing is still running, please wait or cancel.")
             return
 
         folder_path = self.folder_path_var.get()
         if not folder_path:
-            messagebox.showinfo("提示", "请先选择一个文件夹。")
+            messagebox.showinfo("Notice", "Please select a folder first.")
             return
 
         target = Path(folder_path)
         if not target.exists() or not target.is_dir():
-            messagebox.showerror("错误", "所选路径不可用，请重新选择。")
+            messagebox.showerror("Error", "Selected path is not available, please choose again.")
             return
 
         files = self.collect_target_files(target)
         if not files:
-            messagebox.showinfo("提示", "选定文件夹内没有 .c 或 .h 文件。")
+            messagebox.showinfo("Notice", "No .c or .h files found in the selected folder.")
             return
 
         self.total_files = len(files)
@@ -98,8 +98,8 @@ class CommentRemoverApp:
         self.was_cancelled = False
         self.progress_var.set(0.0)
         self.progress_bar.configure(maximum=self.total_files)
-        self.status_var.set(f"准备处理 {self.total_files} 个文件...")
-        self.current_file_var.set("当前文件：准备中")
+        self.status_var.set(f"Preparing to process {self.total_files} files...")
+        self.current_file_var.set("Current file: Preparing")
 
         self.start_btn.configure(state="disabled")
         self.cancel_btn.configure(state="normal")
@@ -153,18 +153,18 @@ class CommentRemoverApp:
             if self.worker_thread is not None:
                 if self.was_cancelled:
                     messagebox.showinfo(
-                        "已取消",
-                        f"处理已取消，已完成 {self.processed_files}/{self.total_files} 个文件。",
+                        "Cancelled",
+                        f"Processing cancelled, completed {self.processed_files}/{self.total_files} files.",
                     )
                 elif self.errors:
                     messagebox.showwarning(
-                        "处理完成（有警告）",
-                        "处理完成，但部分文件出现错误，请查看日志。\n"
+                        "Completed with warnings",
+                        "Processing finished, but some files had errors. Please check the log.\n"
                         + "\n".join(self.errors[:5])
                         + ("\n..." if len(self.errors) > 5 else ""),
                     )
                 else:
-                    messagebox.showinfo("处理完成", "所有文件处理完成。")
+                    messagebox.showinfo("Processing Complete", "All files have been processed.")
                 self.worker_thread = None
 
     def _handle_event(self, event: tuple) -> None:
@@ -173,23 +173,23 @@ class CommentRemoverApp:
             _, index, file_path = event
             self.processed_files = index
             self.progress_var.set(index)
-            self.status_var.set(f"已处理 {index}/{self.total_files} 个文件")
-            self.current_file_var.set(f"当前文件：{file_path}")
+            self.status_var.set(f"Processed {index}/{self.total_files} files")
+            self.current_file_var.set(f"Current file: {file_path}")
         elif event_type == "error":
             _, index, file_path, message = event
             self.processed_files = index
             self.progress_var.set(index)
-            self.status_var.set(f"处理 {index}/{self.total_files} 个文件时出错")
-            self.current_file_var.set(f"错误文件：{file_path} - {message}")
+            self.status_var.set(f"Error processing file {index}/{self.total_files}")
+            self.current_file_var.set(f"Error file: {file_path} - {message}")
         elif event_type == "cancelled":
             self.was_cancelled = True
-            self.status_var.set(f"处理已取消，已完成 {self.processed_files}/{self.total_files} 个文件")
-            self.current_file_var.set("当前文件：无")
+            self.status_var.set(f"Processing cancelled, completed {self.processed_files}/{self.total_files} files")
+            self.current_file_var.set("Current file: None")
         elif event_type == "done":
             self.processed_files = self.total_files
             self.progress_var.set(self.total_files)
-            self.status_var.set("处理完成，所有文件已更新")
-            self.current_file_var.set("当前文件：无")
+            self.status_var.set("Processing complete, all files updated")
+            self.current_file_var.set("Current file: None")
 
     def cancel_processing(self) -> None:
         if self.worker_thread and self.worker_thread.is_alive():
@@ -198,7 +198,7 @@ class CommentRemoverApp:
 
     def on_close(self) -> None:
         if self.worker_thread and self.worker_thread.is_alive():
-            if not messagebox.askyesno("退出", "任务仍在进行，确定要退出吗？"):
+            if not messagebox.askyesno("Exit", "Tasks are still running, are you sure you want to exit?"):
                 return
             self.cancel_event.set()
         self.root.destroy()
